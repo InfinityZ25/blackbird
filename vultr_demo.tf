@@ -45,8 +45,7 @@ resource "vultr_instance" "sv" {
       # Write script
       "cat >> start.sh <<EOL",
       "#!/bin/bash",
-      # For some reason, the screen get's stuck on the first run. Removing "screen -dmS mc-server" works but it's a hack.
-      "screen -dmS mc-server java -Xmx$((${self.ram}-1024))M -Xms1024m -jar server.jar",
+      "sudo screen -dmS \"mcserver\" java -Xmx$((${self.ram}-1024))M -Xms1024m -jar server.jar",
       "echo Created a server with screen name \"server\" on ip ${self.main_ip} ",
       "EOL",
       # Accept the eula
@@ -61,7 +60,7 @@ resource "vultr_instance" "sv" {
       # Disable end on bukkit.yml end
       # Run the start script
       "chmod +x start.sh",
-      "sudo ./start.sh",
+      "sudo sh start.sh",
     ]
   }
 }
