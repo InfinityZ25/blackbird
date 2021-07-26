@@ -1,52 +1,42 @@
-terraform {
-  required_providers {
-    digitalocean = {
-      source  = "digitalocean/digitalocean"
-      version = "2.10.1"
-    }
-    vultr = {
-      source  = "vultr/vultr"
-      version = "2.3.3"
-    }
+# Use export command with TF_VAR_variableName and value on setup
+variable "vultr_api_token" {}
+
+provider "vultr" {
+  # Configuration options
+  api_key = var.vultr_api_token
+}
+data "vultr_ssh_key" "sshKey" {
+  filter {
+    name = "name"
+    # Name of your ssh key in Vultr
+    values = ["Juan Cedeno"]
   }
 }
-# Access token for DigitalOcean, stored in ENV variable DO_TOKEN
-# Use export command with TF_VAR_variableName and value on setup
-variable "do_token" {}
-variable "pvt_key" {}
 
-# Configure the DigitalOcean Provider
-provider "digitalocean" {
-  token = var.do_token
-}
-# Get ssh key
-data "digitalocean_ssh_key" "terraform" {
-  name = "jcedeno"
-}
-
-# Create a resource
-/*
-resource "digitalocean_droplet" "mc2" {
-  image  = "88607383"
-  name   = "mc2"
-  region = "nyc3"
-  size   = "s-4vcpu-8gb-amd"
-  ssh_keys = [
-    data.digitalocean_ssh_key.terraform.id
+resource "vultr_instance" "sv" {
+  plan   = "vhf-2c-4gb"
+  region = "ewr"
+  # Vultr OS ID for ubuntu 20.04
+  os_id            = "387"
+  label            = "terraform_deployment"
+  hostname         = "blackbird"
+  activation_email = false
+  ssh_key_ids = [
+    data.vultr_ssh_key.sshKey.id
   ]
-  monitoring = true
-  # Setup Connection Data
   connection {
-    host        = self.ipv4_address
+    host        = self.main_ip
     user        = "root"
     type        = "ssh"
     private_key = file(var.pvt_key)
     timeout     = "2m"
   }
-  # Here goes the actual script that will run in the droplet
   provisioner "remote-exec" {
     inline = [
       "export PATH=$PATH:/usr/bin",
+      # Install java and screen
+      "sudo apt update",
+      "sudo apt install -y screen openjdk-16-jre-headless",
       # Create directory for minecraft server
       "sudo mkdir /home/minecraft",
       "cd /home/minecraft",
@@ -55,8 +45,9 @@ resource "digitalocean_droplet" "mc2" {
       # Write script
       "cat >> start.sh <<EOL",
       "#!/bin/bash",
-      "screen -dmS server java -Xmx$((${self.memory}-512))M -Xms1024m -jar server.jar",
-      "echo Created a server with screen name \"server\" on ip ${self.ipv4_address} ",
+      # For some reason, the screen get's stuck on the first run. Removing "screen -dmS mc-server" works but it's a hack.
+      "screen -dmS mc-server java -Xmx$((${self.ram}-1024))M -Xms1024m -jar server.jar",
+      "echo Created a server with screen name \"server\" on ip ${self.main_ip} ",
       "EOL",
       # Accept the eula
       "echo \"eula=true\" >> eula.txt",
@@ -74,4 +65,3 @@ resource "digitalocean_droplet" "mc2" {
     ]
   }
 }
-*/
