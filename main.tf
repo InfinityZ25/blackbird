@@ -25,7 +25,7 @@ data "digitalocean_ssh_key" "terraform" {
 }
 
 # Create a resource
-/*
+
 resource "digitalocean_droplet" "mc2" {
   image  = "88607383"
   name   = "mc2"
@@ -74,4 +74,4 @@ resource "digitalocean_droplet" "mc2" {
     ]
   }
 }
-*/
+
